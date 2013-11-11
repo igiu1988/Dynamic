@@ -18,11 +18,30 @@
         // 想要这个view背景透明这句话少不了
         // 在drawRect里的CGContextClearRect(context, rect);也不可少
         self.backgroundColor = [UIColor clearColor];
+        
     }
     return self;
 }
+- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
+{
+    
+}
 
+- (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event
+{
+    UITouch *touch = [touches anyObject];
+    CGPoint center = [touch locationInView:self];
+    
+    CGPoint p = [self convertPoint:center toView:self.superview];
+    
+    self.center = p;
 
+}
+
+//- (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event
+//{
+//    
+//}
 - (void)drawRect:(CGRect)rect
 {
     

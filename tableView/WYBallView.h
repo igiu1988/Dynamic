@@ -9,5 +9,5 @@
 #import <UIKit/UIKit.h>
 
 @interface WYBallView : UIView
-
+@property (assign) void (^shouldUpdate) (WYBallView *ball);
 @end

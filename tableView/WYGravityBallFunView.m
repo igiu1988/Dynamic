@@ -21,7 +21,10 @@
     NSTimer *timer;
     
     UIDynamicAnimator *animator;
-    UIGravityBehavior *behavior;
+    UIGravityBehavior *gravity;
+    UICollisionBehavior *collision;
+    
+    UIDynamicItemBehavior *itemBehaviour;
 }
 @end
 
@@ -54,16 +57,36 @@
 #pragma mark - Create balls though touch
 - (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
 {
+    lastPoint = [[touches anyObject] locationInView:self];
+    
+    
+    
     if (!animator) {
         animator = [[UIDynamicAnimator alloc] initWithReferenceView:self];
+        itemBehaviour = [[UIDynamicItemBehavior alloc] init];
+        itemBehaviour.elasticity = 0.8;
+        itemBehaviour.resistance = 0.2;
+        itemBehaviour.friction = 0.1;
+        itemBehaviour.angularResistance = 0.1;
+        itemBehaviour.density = 10000;
+        [animator addBehavior:itemBehaviour];
+        
+    
     }
-    if (!behavior) {
-        behavior = [[UIGravityBehavior alloc] init];
+    if (!gravity) {
+        gravity = [[UIGravityBehavior alloc] init];
         
     }
-    [animator addBehavior:behavior];
+    if (!collision) { 
+        collision = [[UICollisionBehavior alloc] init];
+        collision.translatesReferenceBoundsIntoBoundary = YES;
+        
+        collision.collisionMode = UICollisionBehaviorModeEverything;
+    }
+//    [animator addBehavior:gravity];
+    [animator addBehavior:collision];
     
-    lastPoint = [[touches anyObject] locationInView:self];
+    
     currentPoint = lastPoint;
     [self generateBallWithPosition:lastPoint];
     timer = [NSTimer scheduledTimerWithTimeInterval:BALL_CRAETE_TIME target:self selector:@selector(timerHandler) userInfo:nil repeats:YES];
@@ -71,6 +94,7 @@
 
 - (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event
 {
+    
     currentPoint = [[touches anyObject] locationInView:self];
 }
 
@@ -88,33 +112,42 @@
     [self generateBallWithPosition:currentPoint];
 }
 
--(float)distanceFromPointX:(CGPoint)start distanceToPointY:(CGPoint)end{
-    float distance;
-    //下面就是高中的数学，不详细解释了
-    CGFloat xDist = (end.x - start.x);
-    CGFloat yDist = (end.y - start.y);
-    distance = sqrt((xDist * xDist) + (yDist * yDist));
-    return distance;
-}
 #pragma mark - Ball View LifeCycle
 - (void)generateBallWithPosition:(CGPoint )p
 {
     CGRect rect = CGRectMake(p.x - BALL_RADIUS, p.y - BALL_RADIUS, 2 * BALL_RADIUS, 2 * BALL_RADIUS);
     WYBallView *ball = [[WYBallView alloc] initWithFrame:rect];
+    ball.shouldUpdate = ^(WYBallView *ballView){
+        [animator updateItemUsingCurrentState:ballView];
+    };
+    
     [self addSubview:ball];
-    [behavior addItem:ball];
+//    [gravity addItem:ball];
+    [collision addItem:ball];
+    [itemBehaviour addItem:ball];
+    
 }
 
 - (void)removeBalls
 {
-    for (id<UIDynamicItem> item in behavior.items) {
-        [behavior removeItem:item];
-        UIView *view = (UIView *)item;
-        [view removeFromSuperview];
+    for (id<UIDynamicItem> item in gravity.items) {
+        [gravity removeItem:item];
+    }
+    for (id<UIDynamicItem> item in collision.items) {
+        [collision removeItem:item];
     }
     [animator removeAllBehaviors];
-    behavior = nil;
+    gravity = nil;
+    [collision removeAllBoundaries];
+    collision = nil;
     animator = nil;
+    
+    for (UIView *view in self.subviews) {
+        if ([view isKindOfClass:[WYBallView class]]) {
+            [view removeFromSuperview];
+            
+        }
+    }
 }
 
 
